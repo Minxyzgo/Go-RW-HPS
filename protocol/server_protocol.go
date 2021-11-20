@@ -14,6 +14,7 @@ import (
 
 type ServerProtocol struct {
 	*server.Server
+	*core.ProtocolImpl
 }
 
 func (p *ServerProtocol) Init(server *server.Server) {
@@ -50,33 +51,8 @@ func (p *ServerProtocol) ServerInfo(player core.Player) *rnet.Packet {
 	)
 }
 
-func (p *ServerProtocol) AddChat(packet rnet.Packet) string {
-	str, err := io.NewDataBuffer(packet.Data).ReadUTF()
-	if err != nil {
-		fmt.Println(err)
-		return "read error"
-	}
-
-	return str
-}
-
-func (p *ServerProtocol) SendChat(msg, sender string, team int32) *rnet.Packet {
-	return rnet.NewPacketData(rnet.PacketSendChat,
-		msg,
-		byte(3),
-		true,
-		sender,
-		team,
-		team,
-	)
-}
-
 func (p *ServerProtocol) SendSysChat(msg string) *rnet.Packet {
 	return p.SendChat(msg, "SERVER", 5)
-}
-
-func (p *ServerProtocol) Kick(msg string) *rnet.Packet {
-	return rnet.NewPacketData(rnet.PacketKick, msg)
 }
 
 func (p *ServerProtocol) ReceivePacket(packet rnet.Packet, sender *core.Player) error {
@@ -89,7 +65,7 @@ func (p *ServerProtocol) ReceivePacket(packet rnet.Packet, sender *core.Player) 
 		}
 		isCmd, _ := rcmd.QcCmd.ParseChat(sender, str)
 		if isCmd {
-			err = p.TeamData(*sender).Send(sender)
+			err = p.EachPacket(*p.TeamData(*sender))
 			if err != nil {
 				return err
 			}
@@ -158,14 +134,6 @@ func (p *ServerProtocol) RegisterConnection() *rnet.Packet {
 	)
 }
 
-func (p *ServerProtocol) Ping(sender *core.Player) *rnet.Packet {
-	sender.TimeTemp = time.Now().UnixMilli()
-	return rnet.NewPacketData(rnet.PacketHeartBeat,
-		int64(1000),
-		byte(0),
-	)
-}
-
 func (p *ServerProtocol) TeamData(player core.Player) *rnet.Packet {
 	d := io.NewDataBuffer([]byte{})
 	//_ = d.WriteData(true)
@@ -230,6 +198,15 @@ func (p *ServerProtocol) TeamData(player core.Player) *rnet.Packet {
 		return nil
 	}
 	//[]byte{0, 0, 0, 0, 1, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 6, 115, 99, 101 ,110, 100, 50, 0, 0, 0, 0, 0, 0, 0, 1 ,125, 29, 42, 66, 233 ,0 ,0 ,0 ,0, 0, 0, 0, 0, 4, 0, 0 ,0 ,0 ,0 ,255, 255, 216, 241, 0 ,0, 0, 0, 0, 0, 0, 0 ,0 ,0})
+	//
+	//b_d := io.NewDataBuffer([]byte{})
+	//b_d.WriteGzipData("teams", buf)
+	//head, d_debug, err := b_d.ReadGzipData()
+	//if err != nil {
+	//	fmt.Println(err)
+	//	return nil
+	//}
+	//fmt.Println("decode", head, d_debug)
 
 	err = d.WriteGzipData("teams", buf)
 	if err != nil {
@@ -259,10 +236,6 @@ func (p *ServerProtocol) TeamData(player core.Player) *rnet.Packet {
 	buf = d.Bytes()
 	//logging.Infof("team data:", buf)
 	return rnet.NewPacket(rnet.PacketTeamList, buf)
-}
-
-func (p *ServerProtocol) ErrorPasswd() *rnet.Packet {
-	return rnet.NewPacketData(rnet.PacketPasswdError, 0)
 }
 
 func (p *ServerProtocol) ServerID() string {

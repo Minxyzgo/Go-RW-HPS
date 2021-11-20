@@ -5,8 +5,9 @@ import (
 	"compress/gzip"
 	"encoding/binary"
 	"errors"
-	"github.com/panjf2000/gnet/logging"
+	"fmt"
 	"reflect"
+	"time"
 )
 
 type DataBytesBuffer struct {
@@ -139,10 +140,8 @@ func (data *DataBytesBuffer) ReadData(d ...interface{}) (err error) {
 //
 func (data *DataBytesBuffer) WriteData(d ...interface{}) error {
 	for _, d := range d {
-		v := reflect.ValueOf(d)
-		if v.Kind() == reflect.Ptr {
-			v = v.Elem()
-		}
+		v := reflect.Indirect(reflect.ValueOf(d))
+
 		switch v.Kind() {
 		case reflect.String:
 			err := data.WriteUTF(v.String())
@@ -206,7 +205,11 @@ func (data *DataBytesBuffer) WriteGzipData(str string, d ...interface{}) error {
 	}
 	dataBuf := buf.Bytes()
 	buf.Reset()
-	g := gzip.NewWriter(buf)
+	g, _ := gzip.NewWriterLevel(buf, gzip.BestCompression)
+	g.Extra = nil
+	g.ModTime, _ = time.Parse("2006-01-02 15:04:05 -0700 MST", "0001-01-01 00:00:00 +0000 UTC")
+	g.OS = 0
+	fmt.Println(g.Header)
 	_, err = g.Write(dataBuf)
 	if err != nil {
 		return err
@@ -228,20 +231,40 @@ func (data *DataBytesBuffer) WriteGzipData(str string, d ...interface{}) error {
 	if err != nil {
 		return err
 	}
+	//fmt.Println(strings.Join(([]string)unsafe.Slice(dataBuf), ","))
 	_, err = data.Write(dataBuf)
 	//fmt.Printf("hex: %v\n", dataBuf)
 	return err
 }
 
 func (data *DataBytesBuffer) ReadGzipData() (header string, d []byte, err error) {
-	g, _ := gzip.NewReader(data)
-	var length int32
-	d = make([]byte, length)
-	_, err = g.Read(d)
+	header, err = data.ReadUTF()
 	if err != nil {
-		logging.LogErr(err)
 		return "", nil, err
 	}
+
+	if err != nil {
+		return "", nil, err
+	}
+	var length int32
+	err = data.ReadData(&length)
+	if err != nil {
+		return "", nil, err
+	}
+	buf := make([]byte, length)
+	_, err = data.Read(buf)
+	if err != nil {
+		return "", nil, err
+	}
+
+	buf2 := make([]byte, length)
+	g, err := gzip.NewReader(bytes.NewReader(buf))
+	_, err = g.Read(buf2)
+	if err != nil {
+		return "", nil, err
+	}
+	err = g.Close()
+	d = buf2
 	return
 }
 
