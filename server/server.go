@@ -40,9 +40,8 @@ func NewServer(maxPlayer int, protocol core.Protocol) *Server {
 }
 
 func (server *Server) React(frame []byte, conn gnet.Conn) (out []byte, action gnet.Action) {
-
-	// Use ants pool to unblock the event-loop.
 	fmt.Println(frame)
+	// Use ants pool to unblock the event-loop.
 	_ = server.Pool.Submit(func() {
 		p, err := rnet.Process(frame)
 		//fmt.Println(p)
@@ -147,6 +146,9 @@ func (server *Server) Join(conn gnet.Conn, packet rnet.Packet) {
 		_ = conn.Close()
 		return
 	}
+	//server.Players.Get()[3] = player
+	//player.Site = 3
+	//player.Team = 0
 
 	err = server.RegisterConnection().Send(player)
 

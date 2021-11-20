@@ -4,6 +4,7 @@ import (
 	"errors"
 	"go-rwhps/core"
 	"strconv"
+	"sync"
 )
 
 type Group struct {
@@ -78,12 +79,15 @@ func (group *Group) Full() bool {
 
 // Get Original group. It includes nil. If you don't want to do so, please use Real
 func (group *Group) Get() []*core.Player {
+	mutex := &sync.RWMutex{}
+	mutex.Lock()
+	defer mutex.Unlock()
 	return group.members
 }
 
 // Real This returns a group which is not include nil
 func (group *Group) Real() []*core.Player {
-	tmp := make([]*core.Player, cap(group.members))
+	tmp := make([]*core.Player, group.Cap())
 	x := 0
 	for _, member := range group.members {
 		if member != nil {
@@ -94,4 +98,22 @@ func (group *Group) Real() []*core.Player {
 
 	tmp = tmp[:x]
 	return tmp
+}
+
+func (group *Group) Move(player *core.Player, index int, force bool) bool {
+	if force {
+		group.Get()[index], group.Get()[player.Site] = group.Get()[player.Site], group.Get()[index]
+		group.Get()[player.Site].Site = player.Site
+		player.Site = byte(index)
+		return true
+	} else {
+		if group.Get()[index] != nil {
+			return false
+		} else {
+			group.Get()[index] = player
+			group.Get()[player.Site] = nil
+			player.Site = byte(index)
+			return true
+		}
+	}
 }

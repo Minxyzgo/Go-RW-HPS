@@ -5,6 +5,7 @@ import (
 	"github.com/panjf2000/gnet/logging"
 	"go-rwhps/core"
 	"go-rwhps/io"
+	"go-rwhps/rcmd"
 	"go-rwhps/rnet"
 	"go-rwhps/server"
 	"math/rand"
@@ -22,7 +23,7 @@ func (p *ServerProtocol) Init(server *server.Server) {
 //for _, player := range server.Players.members {
 
 func (p *ServerProtocol) ServerInfo(player core.Player) *rnet.Packet {
-	return rnet.NewPacketData(rnet.PacketServerInfo, []interface{}{
+	return rnet.NewPacketData(rnet.PacketServerInfo,
 		p.ServerID(),
 		p.GameNetVersion(),
 		1, //TODO map
@@ -46,7 +47,7 @@ func (p *ServerProtocol) ServerInfo(player core.Player) *rnet.Packet {
 		false,
 		true,
 		false,
-	})
+	)
 }
 
 func (p *ServerProtocol) AddChat(packet rnet.Packet) string {
@@ -60,14 +61,14 @@ func (p *ServerProtocol) AddChat(packet rnet.Packet) string {
 }
 
 func (p *ServerProtocol) SendChat(msg, sender string, team int32) *rnet.Packet {
-	return rnet.NewPacketData(rnet.PacketSendChat, []interface{}{
+	return rnet.NewPacketData(rnet.PacketSendChat,
 		msg,
 		byte(3),
 		true,
 		sender,
 		team,
 		team,
-	})
+	)
 }
 
 func (p *ServerProtocol) SendSysChat(msg string) *rnet.Packet {
@@ -75,7 +76,7 @@ func (p *ServerProtocol) SendSysChat(msg string) *rnet.Packet {
 }
 
 func (p *ServerProtocol) Kick(msg string) *rnet.Packet {
-	return rnet.NewPacketData(rnet.PacketKick, []interface{}{msg})
+	return rnet.NewPacketData(rnet.PacketKick, msg)
 }
 
 func (p *ServerProtocol) ReceivePacket(packet rnet.Packet, sender *core.Player) error {
@@ -86,11 +87,20 @@ func (p *ServerProtocol) ReceivePacket(packet rnet.Packet, sender *core.Player) 
 		if err != nil {
 			return err
 		}
-		//p.Packets<-*p.SendChat(str, sender.Name, int32(sender.Team))
-		err = p.EachPacket(*p.SendChat(str, sender.Name, int32(sender.Team)))
-		if err != nil {
-			return err
+		isCmd, _ := rcmd.QcCmd.ParseChat(sender, str)
+		if isCmd {
+			err = p.TeamData(*sender).Send(sender)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = p.EachPacket(*p.SendChat(str, sender.Name, int32(sender.Team)))
+			if err != nil {
+				return err
+			}
 		}
+		//p.Packets<-*p.SendChat(str, sender.Name, int32(sender.Team))
+
 	case rnet.PacketPlayerInfo:
 		info := &struct {
 			_              string
@@ -107,6 +117,7 @@ func (p *ServerProtocol) ReceivePacket(packet rnet.Packet, sender *core.Player) 
 		}
 		sender.Name = info.Name
 		sender.Uid = info.Uid
+
 		err = p.EachPacketPlayer(func(player *core.Player) *rnet.Packet {
 			return p.TeamData(*player)
 		})
@@ -136,45 +147,49 @@ func (p *ServerProtocol) ReceivePacket(packet rnet.Packet, sender *core.Player) 
 }
 
 func (p *ServerProtocol) RegisterConnection() *rnet.Packet {
-	return rnet.NewPacketData(rnet.PacketRegisterConnection, []interface{}{
+	return rnet.NewPacketData(rnet.PacketRegisterConnection,
 		p.ServerID(),
 		1,
 		p.GameNetVersion(),
 		p.GameNetVersion(),
 		"com.corrodinggames.rts.server",
 		p.ConnectUuid.String(),
-		100000 + rand.Intn(899999),
-	})
+		100000+rand.Intn(899999),
+	)
 }
 
 func (p *ServerProtocol) Ping(sender *core.Player) *rnet.Packet {
 	sender.TimeTemp = time.Now().UnixMilli()
-	return rnet.NewPacketData(rnet.PacketHeartBeat, []interface{}{
+	return rnet.NewPacketData(rnet.PacketHeartBeat,
 		int64(1000),
 		byte(0),
-	})
+	)
 }
 
 func (p *ServerProtocol) TeamData(player core.Player) *rnet.Packet {
 	d := io.NewDataBuffer([]byte{})
+	//_ = d.WriteData(true)
+	fmt.Println(server.GameServer.Players.Get())
 	for _, player := range p.Players.Get() {
 		if player == nil {
 			_ = d.WriteData(false)
+			continue
 		} else {
-			_ = d.WriteData([]interface{}{
+			_ = d.WriteData(
 				true,
 				0,
-			})
+			)
 			if p.StartGame {
-				_ = d.WriteData([]interface{}{
+				_ = d.WriteData(
 					player.Site,
 					player.Ping,
 					p.SharedControl,
 					player.SharedControl,
-				})
+				)
 				continue
 			} else {
-				_ = d.WriteData([]interface{}{
+				fmt.Println(player)
+				_ = d.WriteData(
 					player.Site,
 					p.Credits,
 					player.Team,
@@ -193,7 +208,7 @@ func (p *ServerProtocol) TeamData(player core.Player) *rnet.Packet {
 					false,
 					-9999,
 					false,
-				})
+				)
 				if player.Admin {
 					_ = d.WriteData(1)
 				} else {
@@ -203,22 +218,25 @@ func (p *ServerProtocol) TeamData(player core.Player) *rnet.Packet {
 		}
 	}
 	buf := d.Bytes()
+	fmt.Println(buf)
 	d.Reset()
-	err := d.WriteData([]interface{}{
+	err := d.WriteData(
 		int32(player.Site),
 		p.StartGame,
 		p.Players.Cap(),
-	})
+	)
 	if err != nil {
 		logging.LogErr(err)
 		return nil
 	}
+	//[]byte{0, 0, 0, 0, 1, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 6, 115, 99, 101 ,110, 100, 50, 0, 0, 0, 0, 0, 0, 0, 1 ,125, 29, 42, 66, 233 ,0 ,0 ,0 ,0, 0, 0, 0, 0, 4, 0, 0 ,0 ,0 ,0 ,255, 255, 216, 241, 0 ,0, 0, 0, 0, 0, 0, 0 ,0 ,0})
+
 	err = d.WriteGzipData("teams", buf)
 	if err != nil {
 		logging.LogErr(err)
 		return nil
 	}
-	err = d.WriteData([]interface{}{
+	err = d.WriteData(
 		p.Mist,
 		p.Credits,
 		true,
@@ -233,19 +251,18 @@ func (p *ServerProtocol) TeamData(player core.Player) *rnet.Packet {
 		false,
 		p.SharedControl,
 		false,
-	})
+	)
 	if err != nil {
 		logging.LogErr(err)
 		return nil
 	}
 	buf = d.Bytes()
+	//logging.Infof("team data:", buf)
 	return rnet.NewPacket(rnet.PacketTeamList, buf)
 }
 
 func (p *ServerProtocol) ErrorPasswd() *rnet.Packet {
-	return rnet.NewPacketData(rnet.PacketPasswdError, []interface{}{
-		0,
-	})
+	return rnet.NewPacketData(rnet.PacketPasswdError, 0)
 }
 
 func (p *ServerProtocol) ServerID() string {

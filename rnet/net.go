@@ -57,6 +57,7 @@ func (packet *Packet) Send(conn gnet.Conn) (err error) {
 		return
 	}
 	buf = data.Bytes()
+	fmt.Println(buf)
 	err = conn.AsyncWrite(buf)
 
 	//0 0 0 107 0 0 0 161 0 22 99 111 109 46 99 111 114 114 111 100 105 110 103 103 97 109 101 115 46 114 116 115 0 0 0 1 0 0 0 151 0 0 0 151 0 27 99 111 109 46 99 111 114 114 111 100 105 110 103 103 97 109 101 115 46 114 116 115 46 106 97 118 97 0 36 49 48 49 50 100 97 102 55 45 98 53 102 55 45 52 53 55 97 45 97 52 55 53 45 51 50 50 56 101 56 54 101 99 49 49 51 0 2 184 181 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
@@ -70,9 +71,9 @@ func NewPacket(head int32, data []byte) *Packet {
 	}
 }
 
-func NewPacketData(head int32, data []interface{}) *Packet {
+func NewPacketData(head int32, data ...interface{}) *Packet {
 	dt := io.NewDataBuffer([]byte{})
-	err := dt.WriteData(data)
+	err := dt.WriteData(data...)
 	if err != nil {
 		fmt.Println(err)
 		return nil
@@ -83,28 +84,26 @@ func NewPacketData(head int32, data []interface{}) *Packet {
 	}
 }
 
-// FormatByteToPacket For example: 0 0 0 4 0 0 0 3 -> Packet{4,[3]}
-func FormatByteToPacket(msg string) *Packet {
+func FormatByteToBytes(msg string) []byte {
 	var data []byte
+	msg = strings.Trim(msg, "[]")
 	for _, s := range strings.Split(msg, " ") {
 		i, _ := strconv.ParseUint(s, 10, 32)
 		data = append(data, byte(i))
 	}
-	buf := bytes.NewBuffer(data)
-	var length, head int32
-	_ = binary.Read(buf, binary.BigEndian, &length)
-	_ = binary.Read(buf, binary.BigEndian, &head)
-	return &Packet{
-		Head: head,
-		Data: buf.Bytes()[8:length],
+	buf := bytes.NewBuffer([]byte{})
+	err := binary.Write(buf, binary.BigEndian, int32(len(data)-4))
+	if err != nil {
+		return nil
 	}
+	return append(buf.Bytes(), data...)
 }
 
 // Process Decode Packet
 func Process(data []byte) (*Packet, error) {
 	var head int32
-	dt := bytes.NewBuffer(data[:4])
-	err := binary.Read(dt, binary.BigEndian, &head)
+	dt := io.NewDataBuffer(data[:4])
+	err := dt.ReadData(&head)
 	//i := 0
 	//if err != nil {
 	//	fmt.Println("read err:", err)
